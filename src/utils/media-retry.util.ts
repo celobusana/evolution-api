@@ -14,7 +14,6 @@ export interface MediaDownloadParams {
 }
 
 import { Logger } from '@config/logger.config';
-import { log } from 'console';
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   maxAttempts: 6,
@@ -27,7 +26,7 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 export async function downloadMediaMessageWithRetry(
   message: MediaDownloadParams,
   type: 'buffer' | 'stream' = 'buffer',
-  logger: Logger,
+  logger?: Logger | null,
   options: any = {},
   retryOptions: RetryOptions = {}
 ): Promise<Buffer> {
@@ -51,15 +50,21 @@ export async function downloadMediaMessageWithRetry(
     } catch (error) {
       lastError = error as Error;
 
-      logger.error(`Error downloading media message (attempt ${attempt}):`);
-      logger.error(lastError);
+      if (logger) 
+      {
+        logger.error(`Error downloading media message (attempt ${attempt}):`);
+        logger.error(lastError);
+      }
       
       if (attempt === config.maxAttempts) {
         throw new Error(`Failed to download media after ${config.maxAttempts} attempts. Last error: ${lastError.message}`);
       }
 
       const delay = Math.min(config.baseDelay * Math.pow(2, attempt - 1), config.maxDelay);
-      logger.info(`Retrying download in ${delay}ms...`);
+      if (logger) 
+      {
+        logger.info(`Retrying download in ${delay}ms...`);
+      }
 
       await new Promise(resolve => setTimeout(resolve, delay));
     }

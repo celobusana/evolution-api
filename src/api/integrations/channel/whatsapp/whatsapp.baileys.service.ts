@@ -1267,7 +1267,8 @@ export class BaileysStartupService extends ChannelStartupService {
                 const buffer = await downloadMediaMessageWithRetry(
                   { key: received.key, message: received?.message },
                   'buffer',
-                  { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+                  this.logger,
+                  { reuploadRequest: this.client.updateMediaMessage },
                   { maxAttempts: 3, timeout: 15000 }
                 );
 
@@ -2147,7 +2148,8 @@ export class BaileysStartupService extends ChannelStartupService {
             const buffer = await downloadMediaMessageWithRetry(
               { key: messageRaw.key, message: messageRaw?.message },
               'buffer',
-              { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+              this.logger,
+              { reuploadRequest: this.client.updateMediaMessage },
               { maxAttempts: 3, timeout: 15000 }
             );
 
@@ -3433,7 +3435,8 @@ export class BaileysStartupService extends ChannelStartupService {
       const buffer = await downloadMediaMessageWithRetry(
         { key: msg?.key, message: msg?.message },
         'buffer',
-        { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+        this.logger,
+        { reuploadRequest: this.client.updateMediaMessage },
         { maxAttempts: 3, timeout: 15000 }
       );
       const typeMessage = getContentType(msg.message);
