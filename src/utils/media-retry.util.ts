@@ -14,11 +14,11 @@ export interface MediaDownloadParams {
 }
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
-  maxAttempts: 3,
-  initialDelay: 1000,
-  baseDelay: 1000,
-  maxDelay: 5000,
-  timeout: 10000,
+  maxAttempts: 4,
+  initialDelay: 3000,
+  baseDelay: 3000,
+  maxDelay: 10000,
+  timeout: 15000,
 };
 
 export async function downloadMediaMessageWithRetry(
