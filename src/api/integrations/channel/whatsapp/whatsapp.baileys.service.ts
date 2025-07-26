@@ -87,6 +87,7 @@ import { status } from '@utils/renderStatus';
 import useMultiFileAuthStatePrisma from '@utils/use-multi-file-auth-state-prisma';
 import { AuthStateProvider } from '@utils/use-multi-file-auth-state-provider-files';
 import { useMultiFileAuthStateRedisDb } from '@utils/use-multi-file-auth-state-redis-db';
+import { downloadMediaMessageWithRetry } from '@utils/media-retry.util';
 import axios from 'axios';
 import makeWASocket, {
   AnyMessageContent,
@@ -1263,27 +1264,15 @@ export class BaileysStartupService extends ChannelStartupService {
           if (this.localWebhook.enabled) {
             if (isMedia && this.localWebhook.webhookBase64) {
               try {
-                const buffer = await downloadMediaMessage(
+                const buffer = await downloadMediaMessageWithRetry(
                   { key: received.key, message: received?.message },
                   'buffer',
-                  {},
                   { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+                  { maxAttempts: 3, timeout: 15000 }
                 );
 
                 if (buffer) {
                   messageRaw.message.base64 = buffer.toString('base64');
-                } else {
-                  // retry to download media
-                  const buffer = await downloadMediaMessage(
-                    { key: received.key, message: received?.message },
-                    'buffer',
-                    {},
-                    { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
-                  );
-
-                  if (buffer) {
-                    messageRaw.message.base64 = buffer.toString('base64');
-                  }
                 }
               } catch (error) {
                 this.logger.error(['Error converting media to base64', error?.message]);
@@ -2155,27 +2144,15 @@ export class BaileysStartupService extends ChannelStartupService {
       if (this.localWebhook.enabled) {
         if (isMedia && this.localWebhook.webhookBase64) {
           try {
-            const buffer = await downloadMediaMessage(
+            const buffer = await downloadMediaMessageWithRetry(
               { key: messageRaw.key, message: messageRaw?.message },
               'buffer',
-              {},
               { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+              { maxAttempts: 3, timeout: 15000 }
             );
 
             if (buffer) {
               messageRaw.message.base64 = buffer.toString('base64');
-            } else {
-              // retry to download media
-              const buffer = await downloadMediaMessage(
-                { key: messageRaw.key, message: messageRaw?.message },
-                'buffer',
-                {},
-                { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
-              );
-
-              if (buffer) {
-                messageRaw.message.base64 = buffer.toString('base64');
-              }
             }
           } catch (error) {
             this.logger.error(['Error converting media to base64', error?.message]);
@@ -3453,11 +3430,11 @@ export class BaileysStartupService extends ChannelStartupService {
         msg.message = JSON.parse(JSON.stringify(msg.message));
       }
 
-      const buffer = await downloadMediaMessage(
+      const buffer = await downloadMediaMessageWithRetry(
         { key: msg?.key, message: msg?.message },
         'buffer',
-        {},
         { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
+        { maxAttempts: 3, timeout: 15000 }
       );
       const typeMessage = getContentType(msg.message);
 
