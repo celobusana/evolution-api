@@ -1268,7 +1268,7 @@ export class BaileysStartupService extends ChannelStartupService {
                   { key: received.key, message: received?.message },
                   'buffer',
                   this.logger,
-                  { reuploadRequest: this.client.updateMediaMessage },
+                  { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
                   { maxAttempts: 3, timeout: 15000 }
                 );
 
@@ -2149,7 +2149,7 @@ export class BaileysStartupService extends ChannelStartupService {
               { key: messageRaw.key, message: messageRaw?.message },
               'buffer',
               this.logger,
-              { reuploadRequest: this.client.updateMediaMessage },
+              { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
               { maxAttempts: 3, timeout: 15000 }
             );
 
@@ -3436,7 +3436,7 @@ export class BaileysStartupService extends ChannelStartupService {
         { key: msg?.key, message: msg?.message },
         'buffer',
         this.logger,
-        { reuploadRequest: this.client.updateMediaMessage },
+        { logger: P({ level: 'error' }) as any, reuploadRequest: this.client.updateMediaMessage },
         { maxAttempts: 3, timeout: 15000 }
       );
       const typeMessage = getContentType(msg.message);
