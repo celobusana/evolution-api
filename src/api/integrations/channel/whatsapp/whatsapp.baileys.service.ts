@@ -152,6 +152,36 @@ import { useVoiceCallsBaileys } from './voiceCalls/useVoiceCallsBaileys';
 
 const groupMetadataCache = new CacheService(new CacheEngine(configService, 'groups').getEngine());
 
+export type LongInput = number | Long | null | undefined;
+
+/**
+ * Converte um timestamp (ms) para string ISO de forma segura.
+ * - Retorna string vazia ("") se o input for nulo/undefined ou inválido.
+ * - Retorna a string ISO (UTC) por padrão. Pode ajustar para toLocaleString() se preferir.
+ */
+export function safeLongToIsoString(input: LongInput): string {
+  try {
+    if (input == null) return ''; // nulo/undefined -> vazio
+
+    if (typeof input !== 'number' || !Number.isFinite(input)) return '';
+
+    // limites razoáveis (ajuste se necessário)
+    const MIN_MS = -8640000000000000; // Date min in JS
+    const MAX_MS = 8640000000000000;  // Date max in JS
+
+    if (input < MIN_MS || input > MAX_MS) return '';
+
+    const d = new Date(input);
+    if (isNaN(d.getTime())) return '';
+
+    return d.toISOString();
+  } catch (err) {
+    // fail-safe: nunca propaga erro, só retorna string vazia
+    return '';
+  }
+}
+
+
 // Adicione a função getVideoDuration no início do arquivo
 async function getVideoDuration(input: Buffer | string | Readable): Promise<number> {
   const MediaInfoFactory = (await import('mediainfo.js')).default;
@@ -1030,12 +1060,27 @@ export class BaileysStartupService extends ChannelStartupService {
       }
     },
 
+    // MARK: Message received
     'messages.upsert': async (
       { messages, type, requestId }: { messages: proto.IWebMessageInfo[]; type: MessageUpsertType; requestId?: string },
       settings: any,
     ) => {
+      let messageDatetime;
+      let messageText;
       try {
         for (const received of messages) {
+          try {
+            if (received.message)
+            {
+              messageDatetime = safeLongToIsoString(received.messageTimestamp);
+              messageText = received.message?.conversation || received.message?.extendedTextMessage?.text || '';
+              console.log("-------------")
+              console.warn('Received message from', received.key.remoteJid, received.messageTimestamp, messageText);
+            }
+          } catch (error) {
+            console.error('Error logging received message:', error);
+          }
+
           if (received.message?.conversation || received.message?.extendedTextMessage?.text) {
             const text = received.message?.conversation || received.message?.extendedTextMessage?.text;
 
@@ -1342,6 +1387,10 @@ export class BaileysStartupService extends ChannelStartupService {
           }
         }
       } catch (error) {
+        console.trace(
+          '🚨 MESSAGE UPSERT ERROR:',
+          error instanceof Error ? error.message : String(error)
+        );
         this.logger.error(error);
       }
     },
@@ -3130,20 +3179,20 @@ export class BaileysStartupService extends ChannelStartupService {
     // For normal numbers, use traditional Baileys verification
     let normalVerifiedUsers: OnWhatsAppDto[] = [];
     if (normalUsers.length > 0) {
-      console.log('normalUsers', normalUsers);
+      // console.log('normalUsers', normalUsers);
       const numbersToVerify = normalUsers.map(({ jid }) => jid.replace('+', ''));
-      console.log('numbersToVerify', numbersToVerify);
+      // console.log('numbersToVerify', numbersToVerify);
 
       const cachedNumbers = await getOnWhatsappCache(numbersToVerify);
-      console.log('cachedNumbers', cachedNumbers);
+      // console.log('cachedNumbers', cachedNumbers);
 
       const filteredNumbers = numbersToVerify.filter(
         (jid) => !cachedNumbers.some((cached) => cached.jidOptions.includes(jid)),
       );
-      console.log('filteredNumbers', filteredNumbers);
+      // console.log('filteredNumbers', filteredNumbers);
 
       const verify = await this.client.onWhatsApp(...filteredNumbers);
-      console.log('verify', verify);
+      // console.log('verify', verify);
       normalVerifiedUsers = await Promise.all(
         normalUsers.map(async (user) => {
           let numberVerified: (typeof verify)[0] | null = null;
