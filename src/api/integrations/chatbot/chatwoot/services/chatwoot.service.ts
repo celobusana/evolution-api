@@ -961,6 +961,7 @@ export class ChatwootService {
     quotedMsg?: MessageModel,
   ) {
     if (sourceId && this.isImportHistoryAvailable()) {
+      this.logger.warn(`sendData ${sourceId} - Checking for existing message before sending to Chatwoot`);
       const messageAlreadySaved = await chatwootImport.getExistingSourceIds([sourceId], conversationId);
       if (messageAlreadySaved) {
         if (messageAlreadySaved.size > 0) {

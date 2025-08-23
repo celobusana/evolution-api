@@ -1758,6 +1758,7 @@ export class BaileysStartupService extends ChannelStartupService {
       this.localChatwoot.importMessages &&
       this.isSyncNotificationFromUsedSyncType(msg)
     ) {
+      this.logger.warn(`Sync notification received - chunkOrder: ${msg.chunkOrder}, progress: ${msg.progress} Chatwoot ${this.localChatwoot}`);
       if (msg.chunkOrder === 1) {
         this.chatwootService.startImportHistoryMessages(instance);
       }
